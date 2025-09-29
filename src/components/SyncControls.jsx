@@ -21,20 +21,25 @@ const SyncControls = ({ onPlannerLoad, isGuest = false, user }) => {
 
     const pingServer = async () => {
         try {
-            const res = await fetch("/api/health");
+            const res = await fetch("/api/health", {
+                method: "HEAD", // Use HEAD request to minimize data transfer
+                cache: "no-cache",
+            });
             if (res.ok) {
                 setIsServerReady(true);
+                localStorage.setItem("lastHealthCheck", Date.now().toString());
             } else {
                 throw new Error("Health check failed");
             }
         } catch {
-            console.warn("Server not ready, retrying in 3s...");
-            setTimeout(pingServer, 3000);
+            console.warn("Server not ready, retrying in 5s...");
+            setTimeout(pingServer, 5000); // Increased retry interval to reduce calls
         }
     };
 
     useEffect(() => {
-        pingServer();
+        // Assume server is ready - only check when user actually tries to sync/load
+        setIsServerReady(true);
 
         // Check sync interval
         const lastSync = parseInt(
@@ -128,6 +133,18 @@ const SyncControls = ({ onPlannerLoad, isGuest = false, user }) => {
             return;
         }
 
+        // Check server readiness only when user actually tries to sync
+        if (!isServerReady) {
+            toast.info("Checking server connection...");
+            await pingServer();
+            if (!isServerReady) {
+                toast.error("Server unavailable", {
+                    description: "Please try again later.",
+                });
+                return;
+            }
+        }
+
         const dates = storage.getAllPlannerDates(user.id);
         const planner = dates.reduce((acc, date) => {
             const dayData = storage.getPlannerData(user.id, date);
@@ -188,6 +205,18 @@ const SyncControls = ({ onPlannerLoad, isGuest = false, user }) => {
             return;
         }
 
+        // Check server readiness only when user actually tries to load
+        if (!isServerReady) {
+            toast.info("Checking server connection...");
+            await pingServer();
+            if (!isServerReady) {
+                toast.error("Server unavailable", {
+                    description: "Please try again later.",
+                });
+                return;
+            }
+        }
+
         try {
             const res = await fetch(`/api/planner/${user.id}`);
             if (!res.ok) throw new Error("No planner found on server");
@@ -233,19 +262,11 @@ const SyncControls = ({ onPlannerLoad, isGuest = false, user }) => {
     return (
         <div className="relative inline-block text-left" ref={menuRef}>
             <button
-                onClick={() => {
-                    setOpen((prev) => !prev);
-                    if (!isServerReady) pingServer();
-                }}
+                onClick={() => setOpen((prev) => !prev)}
                 className={`p-2 rounded-full transition-colors ${theme.colors.backgroundSecondary} ${theme.colors.shadow} ${theme.colors.text} hover:opacity-90 touch-manipulation`}
-                title={isServerReady ? "Sync Settings" : "Waking up server..."}
-                disabled={!isServerReady && !open}
+                title="Sync Settings"
             >
-                {isServerReady ? (
-                    <Settings size={18} className="sm:w-5 sm:h-5" />
-                ) : (
-                    <Loader2 size={18} className="animate-spin sm:w-5 sm:h-5" />
-                )}
+                <Settings size={18} className="sm:w-5 sm:h-5" />
             </button>
 
             {open && (
