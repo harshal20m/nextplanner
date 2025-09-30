@@ -46,20 +46,29 @@ const App = () => {
             });
             router.push("/");
         } else {
-            // Clear user-specific data from localStorage
+            // Only clear user session data, keep planner data in localStorage
             if (user?.id) {
-                storage.clearUserData(user.id);
+                // Mark that this user has loaded data from server (prevents reload tricks)
+                storage.markServerDataLoaded(user.id);
+                // Clear only current user, not planner data
+                storage.clearCurrentUser();
             }
-            // Also clear any NextAuth related data
+
+            // Clear NextAuth related data
             localStorage.removeItem("next-auth.session-token");
             localStorage.removeItem("next-auth.csrf-token");
             localStorage.removeItem("next-auth.callback-url");
-            // Clear any other potential auth-related keys
+
+            // Clear only auth-related keys, not planner data
             Object.keys(localStorage).forEach((key) => {
-                if (key.startsWith("next-auth") || key.startsWith("planner-")) {
+                if (
+                    key.startsWith("next-auth") ||
+                    key === "planner-current-user"
+                ) {
                     localStorage.removeItem(key);
                 }
             });
+
             // Sign out from NextAuth
             await signOut({ callbackUrl: "/" });
         }

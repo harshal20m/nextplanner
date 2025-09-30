@@ -180,6 +180,27 @@ export const storage = {
             console.error("Error clearing user data:", error);
         }
     },
+
+    // Check if user has loaded data from server
+    hasServerDataLoaded(userId) {
+        try {
+            return (
+                localStorage.getItem(`serverDataLoaded_${userId}`) === "true"
+            );
+        } catch (error) {
+            console.error("Error checking server data status:", error);
+            return false;
+        }
+    },
+
+    // Mark that user has loaded data from server
+    markServerDataLoaded(userId) {
+        try {
+            localStorage.setItem(`serverDataLoaded_${userId}`, "true");
+        } catch (error) {
+            console.error("Error marking server data loaded:", error);
+        }
+    },
 };
 
 export default storage;

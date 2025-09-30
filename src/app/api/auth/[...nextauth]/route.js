@@ -57,7 +57,10 @@ const handler = NextAuth({
                     if (user) {
                         session.user.id = user.id;
                         session.user.name = user.name;
-                        session.user.image = user.image;
+                        // Only use database image if it exists, otherwise keep Google image
+                        if (user.image) {
+                            session.user.image = user.image;
+                        }
                     }
                 } catch (error) {
                     console.error("Error in session callback:", error);

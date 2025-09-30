@@ -15,8 +15,7 @@ const ProfileDropdown = ({
 }) => {
     const { theme } = useTheme();
     const [isOpen, setIsOpen] = useState(false);
-    const [imageLoaded, setImageLoaded] = useState(false);
-    const [showImage, setShowImage] = useState(false);
+    const [imageError, setImageError] = useState(false);
     const menuRef = useRef(null);
 
     useEffect(() => {
@@ -30,24 +29,13 @@ const ProfileDropdown = ({
             document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // Handle image loading
+    // Reset image error when user changes
     useEffect(() => {
-        if (user?.image && !isGuest) {
-            setImageLoaded(false);
-            setShowImage(true);
-        } else {
-            setImageLoaded(false);
-            setShowImage(false);
-        }
-    }, [user?.image, isGuest]);
-
-    const handleImageLoad = () => {
-        setImageLoaded(true);
-    };
+        setImageError(false);
+    }, [user]);
 
     const handleImageError = () => {
-        setImageLoaded(false);
-        setShowImage(false);
+        setImageError(true);
     };
 
     const handleLogout = () => {
@@ -68,12 +56,11 @@ const ProfileDropdown = ({
                     >
                         <User className="w-3 h-3 sm:w-4 sm:h-4" />
                     </div>
-                ) : user?.image && showImage ? (
+                ) : user?.image && user.image.trim() && !imageError ? (
                     <img
                         src={user.image}
                         alt={user.name || user.email}
                         className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border-2 border-white shadow-sm"
-                        onLoad={handleImageLoad}
                         onError={handleImageError}
                     />
                 ) : (
@@ -98,12 +85,13 @@ const ProfileDropdown = ({
                                 >
                                     <User className="w-6 h-6" />
                                 </div>
-                            ) : user?.image && showImage ? (
+                            ) : user?.image &&
+                              user.image.trim() &&
+                              !imageError ? (
                                 <img
                                     src={user.image}
                                     alt={user.name || user.email}
                                     className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
-                                    onLoad={handleImageLoad}
                                     onError={handleImageError}
                                 />
                             ) : (

@@ -27,12 +27,31 @@ const WeeklyStats = ({ userId }) => {
 
     useEffect(() => {
         calculateWeeklyStats();
-        // Load saved weekly goal
-        const savedGoal = localStorage.getItem(`weeklyGoal_${userId}`);
-        if (savedGoal) {
-            setTempGoal(parseInt(savedGoal));
-        }
+        loadNumericGoal();
     }, [userId]);
+
+    const loadNumericGoal = async () => {
+        try {
+            const response = await fetch(`/api/goals/${userId}`);
+            if (response.ok) {
+                const data = await response.json();
+                setTempGoal(data.weeklyNumericGoal || 10);
+            } else {
+                // Fallback to localStorage
+                const savedGoal = localStorage.getItem(`weeklyGoal_${userId}`);
+                if (savedGoal) {
+                    setTempGoal(parseInt(savedGoal));
+                }
+            }
+        } catch (error) {
+            console.error("Error loading numeric goal:", error);
+            // Fallback to localStorage
+            const savedGoal = localStorage.getItem(`weeklyGoal_${userId}`);
+            if (savedGoal) {
+                setTempGoal(parseInt(savedGoal));
+            }
+        }
+    };
 
     const calculateWeeklyStats = () => {
         const today = new Date();
@@ -107,11 +126,8 @@ const WeeklyStats = ({ userId }) => {
                 ? Math.round(totalTasks / weekDates.length)
                 : 0;
 
-        // Get saved weekly goal or use default
-        const savedGoal = localStorage.getItem(`weeklyGoal_${userId}`);
-        const weeklyGoal = savedGoal
-            ? parseInt(savedGoal)
-            : Math.max(completedTasks, 10);
+        // Use the loaded numeric goal
+        const weeklyGoal = tempGoal || Math.max(completedTasks, 10);
 
         setWeeklyData({
             totalTasks,
@@ -141,10 +157,41 @@ const WeeklyStats = ({ userId }) => {
         setIsEditingGoal(true);
     };
 
-    const handleGoalSave = () => {
-        localStorage.setItem(`weeklyGoal_${userId}`, tempGoal.toString());
-        setWeeklyData((prev) => ({ ...prev, weeklyGoal: tempGoal }));
-        setIsEditingGoal(false);
+    const handleGoalSave = async () => {
+        try {
+            const response = await fetch(`/api/goals/${userId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    weeklyNumericGoal: tempGoal,
+                }),
+            });
+
+            if (response.ok) {
+                setWeeklyData((prev) => ({ ...prev, weeklyGoal: tempGoal }));
+                setIsEditingGoal(false);
+                // Also save to localStorage as backup
+                localStorage.setItem(
+                    `weeklyGoal_${userId}`,
+                    tempGoal.toString()
+                );
+            } else {
+                const errorData = await response.json();
+                if (response.status === 429) {
+                    alert(`Goal update cooldown: ${errorData.message}`);
+                } else {
+                    throw new Error(errorData.error || "Failed to save goal");
+                }
+            }
+        } catch (error) {
+            console.error("Error saving numeric goal:", error);
+            // Fallback to localStorage
+            localStorage.setItem(`weeklyGoal_${userId}`, tempGoal.toString());
+            setWeeklyData((prev) => ({ ...prev, weeklyGoal: tempGoal }));
+            setIsEditingGoal(false);
+        }
     };
 
     const handleGoalCancel = () => {

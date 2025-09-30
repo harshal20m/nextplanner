@@ -205,6 +205,16 @@ const SyncControls = ({ onPlannerLoad, isGuest = false, user }) => {
             return;
         }
 
+        // Check if user has already loaded data from server (prevents reload tricks)
+        if (storage.hasServerDataLoaded(user.id)) {
+            toast.info("Data already loaded", {
+                description:
+                    "Your data has already been loaded from the server. No need to reload.",
+                duration: 3000,
+            });
+            return;
+        }
+
         // Check server readiness only when user actually tries to load
         if (!isServerReady) {
             toast.info("Checking server connection...");
@@ -230,6 +240,9 @@ const SyncControls = ({ onPlannerLoad, isGuest = false, user }) => {
                 description:
                     "Your planner data has been loaded from the server.",
             });
+
+            // Mark that this user has loaded data from server
+            storage.markServerDataLoaded(user.id);
 
             // Set load cooldown
             localStorage.setItem("lastLoadTime", Date.now().toString());
