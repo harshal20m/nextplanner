@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Clock, Plus, Trash2, Check, Edit } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext"; // Import useTheme
 import { convertTo12HourFormat } from "../utils/timeUtils";
@@ -63,10 +63,65 @@ const TimeSlot = ({ time, task, onUpdateTask, onDeleteTask, onEditTime }) => {
         handleUpdateSubtask(index, updatedSubtask);
     };
 
+    // Determine completion state
+    const isComplete = useMemo(() => {
+        const subtasks = task?.subtasks || [];
+        return subtasks.length > 0 && subtasks.every((s) => s.done);
+    }, [task]);
+
+    // Trigger a brief celebration overlay when completion is achieved
+    const [showCelebrate, setShowCelebrate] = useState(false);
+    useEffect(() => {
+        if (isComplete) {
+            setShowCelebrate(true);
+            const t = setTimeout(() => setShowCelebrate(false), 1800);
+            return () => clearTimeout(t);
+        }
+    }, [isComplete]);
+
     return (
         <div
-            className={`${theme.colors.cardBg} ${theme.colors.shadow} rounded-2xl border ${theme.colors.border} p-4 sm:p-6 ${theme.colors.shadowHover} transition-all duration-300 hover:scale-[1.02] backdrop-blur-sm touch-manipulation`}
+            className={`${theme.colors.cardBg} ${theme.colors.shadow} rounded-2xl border ${theme.colors.border} p-4 sm:p-6 ${theme.colors.shadowHover} transition-all duration-300 hover:scale-[1.02] backdrop-blur-sm touch-manipulation relative overflow-hidden`}
         >
+            {showCelebrate && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                    {/* Confetti particles */}
+                    <div className="absolute inset-0 overflow-hidden">
+                        {[...Array(12)].map((_, i) => (
+                            <div
+                                key={i}
+                                className="absolute w-2 h-2 bg-yellow-400 rounded-full animate-bounce"
+                                style={{
+                                    left: `${20 + i * 5}%`,
+                                    top: `${30 + (i % 3) * 20}%`,
+                                    animationDelay: `${i * 0.1}s`,
+                                    animationDuration: "1s",
+                                }}
+                            />
+                        ))}
+                        {[...Array(8)].map((_, i) => (
+                            <div
+                                key={`star-${i}`}
+                                className="absolute text-yellow-300 text-lg animate-pulse"
+                                style={{
+                                    left: `${15 + i * 10}%`,
+                                    top: `${20 + (i % 4) * 15}%`,
+                                    animationDelay: `${i * 0.15}s`,
+                                    animationDuration: "0.8s",
+                                }}
+                            >
+                                ✨
+                            </div>
+                        ))}
+                    </div>
+                    {/* Celebration message with animation */}
+                    <div
+                        className={`px-4 py-2 rounded-full text-sm sm:text-base font-bold ${theme.colors.primaryLight} ${theme.colors.primaryText} shadow-lg animate-bounce transform scale-110`}
+                    >
+                        🎉 Plan Completed! 🎉
+                    </div>
+                </div>
+            )}
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2 flex-1 min-w-0">
                     <Clock

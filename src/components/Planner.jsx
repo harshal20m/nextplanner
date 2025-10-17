@@ -16,6 +16,7 @@ import Timer from "./Timer";
 import WeeklyStats from "./WeeklyStats";
 import WeeklyGoal from "./WeeklyGoal";
 import DayStrip from "./DayStrip";
+import DailyThought from "./DailyThought";
 import { toast } from "sonner";
 
 const Planner = ({ user, onLogout, isGuest = false }) => {
@@ -288,13 +289,23 @@ const Planner = ({ user, onLogout, isGuest = false }) => {
 
                 {view === "today" ? (
                     <>
+                        {/* Daily Inspiration */}
+                        <div className="mb-4 sm:mb-6">
+                            <DailyThought userId={user.id} />
+                        </div>
+
                         {/* Weekly Goal and Day Strip Row */}
                         <div className="flex flex-col lg:flex-row sm:gap-4 mb-4 sm:mb-6">
                             <div className="flex-1">
                                 <WeeklyGoal userId={user.id} />
                             </div>
                             <div className="lg:w-80">
-                                <DayStrip />
+                                <DayStrip
+                                    selectedDate={currentDate}
+                                    onSelectDate={(date) =>
+                                        setCurrentDate(date)
+                                    }
+                                />
                             </div>
                         </div>
 
