@@ -17,7 +17,7 @@ const SyncControls = ({ onPlannerLoad, isGuest = false, user }) => {
     const menuRef = useRef(null);
 
     const SYNC_INTERVAL = 60 * 60 * 1000; // 1 hour in ms for sync
-    const LOAD_INTERVAL = 12 * 60 * 60 * 1000; // 12 hours in ms for load
+    const LOAD_INTERVAL = 2 * 60 * 60 * 1000; // 2 hours in ms for load
 
     const pingServer = async () => {
         try {
@@ -205,15 +205,7 @@ const SyncControls = ({ onPlannerLoad, isGuest = false, user }) => {
             return;
         }
 
-        // Check if user has already loaded data from server (prevents reload tricks)
-        if (storage.hasServerDataLoaded(user.id)) {
-            toast.info("Data already loaded", {
-                description:
-                    "Your data has already been loaded from the server. No need to reload.",
-                duration: 3000,
-            });
-            return;
-        }
+        // Allow loading even if it's already been loaded previously; cooldown will throttle frequency
 
         // Check server readiness only when user actually tries to load
         if (!isServerReady) {
@@ -240,9 +232,6 @@ const SyncControls = ({ onPlannerLoad, isGuest = false, user }) => {
                 description:
                     "Your planner data has been loaded from the server.",
             });
-
-            // Mark that this user has loaded data from server
-            storage.markServerDataLoaded(user.id);
 
             // Set load cooldown
             localStorage.setItem("lastLoadTime", Date.now().toString());

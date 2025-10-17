@@ -31,7 +31,8 @@ const Planner = ({ user, onLogout, isGuest = false }) => {
     const [showTimer, setShowTimer] = useState(false);
     const [showStats, setShowStats] = useState(false);
 
-    const defaultTimeSlots = ["Morning Study (6:00 AM - 8:00 AM)"];
+    // Default slot is now optional; do not force it into the UI list
+    const defaultTimeSlots = [];
 
     useEffect(() => {
         const data = storage.getPlannerData(user.id, currentDate);
@@ -130,12 +131,9 @@ const Planner = ({ user, onLogout, isGuest = false }) => {
         setShowUsePreviousModal(false);
     };
 
-    const allTimeSlots = [
-        ...defaultTimeSlots,
-        ...Object.keys(tasks).filter(
-            (time) => !defaultTimeSlots.includes(time)
-        ),
-    ].sort((a, b) => parseTimeForSorting(a) - parseTimeForSorting(b));
+    const allTimeSlots = Object.keys(tasks).sort(
+        (a, b) => parseTimeForSorting(a) - parseTimeForSorting(b)
+    );
 
     const todayStats = () => {
         let total = 0;
